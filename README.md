@@ -7,4 +7,4 @@ This repository contains code for the text version of Umagine (essentially a gem
 Enter ChatGPT api key in config/Umagine.js line 4\
 Copy this repo to vs studio\
 Run "npm run dev"\
-Open local host server and should work\
+Open local host server and should work
