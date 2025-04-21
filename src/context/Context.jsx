@@ -4,84 +4,99 @@ import run from "../config/umagine"
 export const Context = createContext();
 
 const ContextProvider = (props) => {
-
     const [input, setInput] = useState("");
     const [recentPrompt, setRecentPrompt] = useState("");
     const [prevPrompts, setPrevPrompts] = useState([]);
     const [showResult, setShowResult] = useState(false);
     const [loading, setLoading] = useState(false);
     const [resultData, setResultData] = useState("");
+    const [imageUrl, setImageUrl] = useState("");
 
-const delayPara = (index,nextWord) => {
-    setTimeout(function (){
-        setResultData(prev=>prev+nextWord);
-    },75*index)
-}
-
-const newChat = () => {
-    setLoading(false)
-    setShowResult(false)
-
-}
-
-const onSent = async(prompt) => {
-
-    setResultData("")
-    setLoading(true)
-    setShowResult(true)
-    let response;
-    if(prompt !== undefined){
-        response = await run(prompt)
-        setRecentPrompt(prompt)
-    }
-    else{
-        setPrevPrompts(prev =>[...prev,input])
-        setRecentPrompt(input)
-        response = await run(input)
+    const delayPara = (index, nextWord) => {
+        setTimeout(function () {
+            setResultData(prev => prev + nextWord);
+        }, 75 * index)
     }
 
-    let responseArray = response.split("**")
-    let newResponse = " ";
-    for(let i=0; i < responseArray.length; i++){
-        if(i === 0 || i%2 !== 1){
-            newResponse += responseArray[i];
+    const newChat = () => {
+        setLoading(false)
+        setShowResult(false)
+        setImageUrl("")
+    }
+
+    const imageGenerator = async (prompt) => {
+        try {
+            const response = await fetch(
+                "https://api.openai.com/v1/images/generations",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+                        "User-Agent": "Chrome"
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        n: 1,
+                        size: "512x512"
+                    })
+                }
+            );
+            const data = await response.json();
+            if (data.data && data.data[0]) {
+                setImageUrl(data.data[0].url);
+                return data.data[0].url;
+            } else {
+                console.error('No image URL in response:', data);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error generating image:', error);
+            return null;
         }
-        else{
-            newResponse += "<b>"+responseArray[i]+"</b>";
+    }
+
+    const onSent = async (prompt) => {
+        setResultData("")
+        setLoading(true)
+        setShowResult(true)
+        setImageUrl("")
+
+        const promptToUse = prompt !== undefined ? prompt : input;
+        setPrevPrompts(prev => [...prev, promptToUse])
+        setRecentPrompt(promptToUse)
+        
+        const imageUrl = await imageGenerator(promptToUse);
+        if (imageUrl) {
+            setResultData("Image generated successfully!");
+        } else {
+            setResultData("Failed to generate image. Please try again.");
         }
+        
+        setLoading(false)
+        setInput("")
     }
-    let newResponse2 = newResponse.split("*").join("</br>");
-    let newResponseArray = newResponse2.split(" ");
-    for(let i=0; i<newResponseArray.length;i++)
-    {
-        const nextWord = newResponseArray[i];
-        delayPara(i, nextWord+" ")
+
+    const contextValue = {
+        prevPrompts,
+        setPrevPrompts,
+        onSent,
+        setRecentPrompt,
+        recentPrompt,
+        showResult,
+        loading,
+        resultData,
+        input,
+        setInput,
+        newChat,
+        imageUrl
     }
-    setLoading(false)
-    setInput("")
-}
 
-
-
-const contextValue = {
-    prevPrompts,
-    setPrevPrompts,
-    onSent,
-    setRecentPrompt,
-    recentPrompt,
-    showResult,
-    loading,
-    resultData,
-    input,
-    setInput,
-    newChat
- }
-
- return (
-    <Context.Provider value={contextValue}>
-        {props.children}
-    </Context.Provider>
- )
+    return (
+        <Context.Provider value={contextValue}>
+            {props.children}
+        </Context.Provider>
+    )
 }
 
 export default ContextProvider

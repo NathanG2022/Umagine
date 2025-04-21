@@ -1,7 +1,9 @@
+// This file is kept for compatibility with the existing code
+// The actual image generation is now handled in the Context.jsx file
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = "AIzaSyAdL9dmhOlHeo3m9d_MMF8QJEAZMywGpfE"; // Removed extra "const" at the end
+const apiKey = "AIzaSyAdL9dmhOlHeo3m9d_MMF8QJEAZMywGpfE";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({
