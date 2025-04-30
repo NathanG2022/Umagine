@@ -1,4 +1,5 @@
 import React, { createContext, useState } from 'react';
+import OpenAI from 'openai';
 import run from "../config/umagine"
 
 export const Context = createContext();
@@ -11,6 +12,12 @@ const ContextProvider = (props) => {
     const [loading, setLoading] = useState(false);
     const [resultData, setResultData] = useState("");
     const [imageUrl, setImageUrl] = useState("");
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+        apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+        dangerouslyAllowBrowser: true // Required for browser usage
+    });
 
     const delayPara = (index, nextWord) => {
         setTimeout(function () {
@@ -26,55 +33,59 @@ const ContextProvider = (props) => {
 
     const imageGenerator = async (prompt) => {
         try {
-            const response = await fetch(
-                "https://api.openai.com/v1/images/generations",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-                        "User-Agent": "Chrome"
-                    },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        n: 1,
-                        size: "512x512"
-                    })
-                }
-            );
-            const data = await response.json();
-            if (data.data && data.data[0]) {
-                setImageUrl(data.data[0].url);
-                return data.data[0].url;
+            console.log('Generating image with prompt:', prompt);
+            
+            const result = await openai.images.generate({
+                model: "gpt-image-1",
+                prompt: prompt,
+                n: 1,
+                quality: "low",
+                size: "1024x1024"
+            });
+
+            console.log('API Response:', result);
+
+            if (result.data && result.data[0] && result.data[0].b64_json) {
+                // Convert base64 to data URL for display
+                const imageUrl = `data:image/png;base64,${result.data[0].b64_json}`;
+                console.log('Image generated successfully');
+                setImageUrl(imageUrl);
+                return imageUrl;
             } else {
-                console.error('No image URL in response:', data);
-                return null;
+                console.error('Invalid response format:', result);
+                throw new Error('Invalid response format from API');
             }
         } catch (error) {
-            console.error('Error generating image:', error);
+            console.error('Error in imageGenerator:', error);
+            setResultData(`Error: ${error.message}`);
             return null;
         }
     }
 
     const onSent = async (prompt) => {
-        setResultData("")
-        setLoading(true)
-        setShowResult(true)
-        setImageUrl("")
+        try {
+            setResultData("")
+            setLoading(true)
+            setShowResult(true)
+            setImageUrl("")
 
-        const promptToUse = prompt !== undefined ? prompt : input;
-        setPrevPrompts(prev => [...prev, promptToUse])
-        setRecentPrompt(promptToUse)
-        
-        const imageUrl = await imageGenerator(promptToUse);
-        if (imageUrl) {
-            setResultData("Image generated successfully!");
-        } else {
-            setResultData("Failed to generate image. Please try again.");
+            const promptToUse = prompt !== undefined ? prompt : input;
+            setPrevPrompts(prev => [...prev, promptToUse])
+            setRecentPrompt(promptToUse)
+            
+            const imageUrl = await imageGenerator(promptToUse);
+            if (imageUrl) {
+                setResultData("Image generated successfully!");
+            } else {
+                setResultData("Failed to generate image. Please check the console for details.");
+            }
+        } catch (error) {
+            console.error('Error in onSent:', error);
+            setResultData(`Error: ${error.message}`);
+        } finally {
+            setLoading(false)
+            setInput("")
         }
-        
-        setLoading(false)
-        setInput("")
     }
 
     const contextValue = {
