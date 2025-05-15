@@ -14,10 +14,9 @@ const ContextProvider = (props) => {
     const [imageUrl, setImageUrl] = useState("");
     const [selectedFolder, setSelectedFolder] = useState("Tralalero tralala");
 
-    // Initialize OpenAI client
     const openai = new OpenAI({
         apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-        dangerouslyAllowBrowser: true // Required for browser usage
+        dangerouslyAllowBrowser: true 
     });
 
     const delayPara = (index, nextWord) => {
@@ -38,15 +37,16 @@ const ContextProvider = (props) => {
             console.log('Original prompt:', prompt);
             console.log('Selected folder:', selectedFolder);
             
-            // Get the image file based on the selected folder
-            const imagePath = selectedFolder === 'Tralalero tralala' 
-                ? '/src/options/tralalero_tralala.png'
-                : '/src/options/bombardino_crocodilo.png';
+            const filename = selectedFolder
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                + '.png';
+            const imagePath = `/src/options/${filename}`;
 
             console.log('Attempting to fetch image from:', imagePath);
 
             try {
-                // Create a File object from the image
                 const response = await fetch(imagePath);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
@@ -54,15 +54,12 @@ const ContextProvider = (props) => {
                 const blob = await response.blob();
                 console.log('Image blob created:', blob);
                 
-                // Create a File object from the blob
                 const file = new File([blob], "image.png", { type: "image/png" });
                 
-                // Create the edit prompt
                 const editPrompt = `Modify this image by adding or replacing elements with: ${prompt}. Maintain the original image's style, lighting, and perspective while integrating the new elements. Keep the background and overall composition similar to the original image, but incorporate the requested changes in a way that matches the cartoony style of the base image.`;
                 
                 console.log('Edit prompt:', editPrompt);
 
-                // Call the edit API
                 console.log('Calling OpenAI API...');
                 const result = await openai.images.edit({
                     model: "gpt-image-1",
@@ -75,7 +72,6 @@ const ContextProvider = (props) => {
                 console.log('API Response:', result);
 
                 if (result.data && result.data[0] && result.data[0].b64_json) {
-                    // Convert base64 to data URL for display
                     const imageUrl = `data:image/png;base64,${result.data[0].b64_json}`;
                     console.log('Image generated successfully');
                     setImageUrl(imageUrl);

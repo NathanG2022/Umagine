@@ -1,34 +1,58 @@
-import React from 'react';
-import { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Context } from '../context/Context';
 import './FolderSelector.css';
-import sharkImage from '../options/tralalero_tralala.png';
-import crocodileImage from '../options/bombardino_crocodilo.png';
+
+const images = import.meta.glob('../options/*.png', { eager: true });
+
+const formatLabel = (filename) => {
+    return filename
+        .replace(/_/g, ' ')
+        .replace(/\.[^/.]+$/, '')
+        .replace(/\b\w/g, c => c.toUpperCase());
+};
+
+const imageList = Object.entries(images).map(([path, mod]) => {
+    const name = path.split('/').pop();
+    return {
+        label: formatLabel(name),
+        value: name,
+        src: mod.default
+    };
+});
 
 const FolderSelector = () => {
     const { selectedFolder, setSelectedFolder } = useContext(Context);
+    const [sliderIndex, setSliderIndex] = useState(0);
+    const visibleCount = 3;
 
-    const handleFolderChange = (e) => {
-        setSelectedFolder(e.target.value);
+    const handlePrev = () => {
+        setSliderIndex((prev) => Math.max(prev - 1, 0));
     };
+    const handleNext = () => {
+        setSliderIndex((prev) => Math.min(prev + 1, imageList.length - visibleCount));
+    };
+
+    const selectedIndex = imageList.findIndex(img => img.label === selectedFolder);
+
+    const visibleImages = imageList.slice(sliderIndex, sliderIndex + visibleCount);
 
     return (
         <div className="folder-selector">
-            <div className="folder-options">
-                <div 
-                    className={`folder-option ${selectedFolder === 'Tralalero tralala' ? 'selected' : ''}`}
-                    onClick={() => setSelectedFolder('Tralalero tralala')}
-                >
-                    <img src={sharkImage} alt="Tralalero tralala" />
-                    <span>Tralalero Tralala</span>
+            <div className="slider-controls">
+                <button onClick={handlePrev} disabled={sliderIndex === 0}>&lt;</button>
+                <div className="folder-options slider">
+                    {visibleImages.map((img, idx) => (
+                        <div
+                            key={img.value}
+                            className={`folder-option${img.label === selectedFolder ? ' selected' : ''}`}
+                            onClick={() => setSelectedFolder(img.label)}
+                        >
+                            <img src={img.src} alt={img.label} />
+                            <span>{img.label}</span>
+                        </div>
+                    ))}
                 </div>
-                <div 
-                    className={`folder-option ${selectedFolder === 'Bombardino Crocodilo' ? 'selected' : ''}`}
-                    onClick={() => setSelectedFolder('Bombardino Crocodilo')}
-                >
-                    <img src={crocodileImage} alt="Bombardino Crocodilo" />
-                    <span>Bombardino Crocodilo</span>
-                </div>
+                <button onClick={handleNext} disabled={sliderIndex >= imageList.length - visibleCount}>&gt;</button>
             </div>
         </div>
     );

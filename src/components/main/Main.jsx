@@ -3,9 +3,11 @@ import './Main.css'
 import { assets } from '../../assets/assets'
 import { Context } from '../../context/Context'
 import FolderSelector from '../FolderSelector'
+import sharkImage from '../../options/tralalero_tralala.png';
+import crocodileImage from '../../options/bombardino_crocodilo.png';
 
 const Main = () => {
-    const { onSent, recentPrompt, showResult, loading, resultData, setInput, input, imageUrl } = useContext(Context)
+    const { onSent, recentPrompt, showResult, loading, resultData, setInput, input, imageUrl, selectedFolder } = useContext(Context)
     const inputRef = useRef(null);
     const [showFolderSelector, setShowFolderSelector] = useState(false);
 
@@ -32,7 +34,7 @@ const Main = () => {
                             <p><span>Hello, Nathan.</span></p>
                             <p>Select an image to edit:</p>
                         </div>
-                        <FolderSelector />
+                        <FolderSelector direction="horizontal" />
                     </>
                 ) : (
                     <div className='result'>
@@ -53,8 +55,10 @@ const Main = () => {
                                     <div className="image">
                                         {imageUrl ? (
                                             <img src={imageUrl} alt="Generated image" />
+                                        ) : selectedFolder === 'Tralalero tralala' ? (
+                                            <img src={sharkImage} alt="Tralalero Tralala" />
                                         ) : (
-                                            <p>Error occured while generating image. Please try again.</p>
+                                            <img src={crocodileImage} alt="Bombardino Crocodilo" />
                                         )}
                                     </div>
                                 )}

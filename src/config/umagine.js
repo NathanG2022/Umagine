@@ -1,9 +1,6 @@
-// This file is kept for compatibility with the existing code
-// The actual image generation is now handled in the Context.jsx file
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = "add api key here"; 
+const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({
@@ -27,11 +24,9 @@ async function run(prompt) {
 
   const result = await chatSession.sendMessage(prompt);
   
-  // For browser environment, we'll return the text instead of writing to files
   console.log(result.response.text());
   return result.response.text();
   
-  // File operations are removed as they're not possible in browser context
 }
 
 export default run;
