@@ -12,6 +12,7 @@ const ContextProvider = (props) => {
     const [loading, setLoading] = useState(false);
     const [resultData, setResultData] = useState("");
     const [imageUrl, setImageUrl] = useState("");
+    const [selectedFolder, setSelectedFolder] = useState("Tralalero tralala");
 
     // Initialize OpenAI client
     const openai = new OpenAI({
@@ -33,27 +34,59 @@ const ContextProvider = (props) => {
 
     const imageGenerator = async (prompt) => {
         try {
-            console.log('Generating image with prompt:', prompt);
+            console.log('Starting image generation...');
+            console.log('Original prompt:', prompt);
+            console.log('Selected folder:', selectedFolder);
             
-            const result = await openai.images.generate({
-                model: "gpt-image-1",
-                prompt: prompt,
-                n: 1,
-                quality: "low",
-                size: "1024x1024"
-            });
+            // Get the image file based on the selected folder
+            const imagePath = selectedFolder === 'Tralalero tralala' 
+                ? '/src/options/tralalero_tralala.png'
+                : '/src/options/bombardino_crocodilo.png';
 
-            console.log('API Response:', result);
+            console.log('Attempting to fetch image from:', imagePath);
 
-            if (result.data && result.data[0] && result.data[0].b64_json) {
-                // Convert base64 to data URL for display
-                const imageUrl = `data:image/png;base64,${result.data[0].b64_json}`;
-                console.log('Image generated successfully');
-                setImageUrl(imageUrl);
-                return imageUrl;
-            } else {
-                console.error('Invalid response format:', result);
-                throw new Error('Invalid response format from API');
+            try {
+                // Create a File object from the image
+                const response = await fetch(imagePath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+                }
+                const blob = await response.blob();
+                console.log('Image blob created:', blob);
+                
+                // Create a File object from the blob
+                const file = new File([blob], "image.png", { type: "image/png" });
+                
+                // Create the edit prompt
+                const editPrompt = `Modify this image by adding or replacing elements with: ${prompt}. Maintain the original image's style, lighting, and perspective while integrating the new elements. Keep the background and overall composition similar to the original image, but incorporate the requested changes in a way that matches the cartoony style of the base image.`;
+                
+                console.log('Edit prompt:', editPrompt);
+
+                // Call the edit API
+                console.log('Calling OpenAI API...');
+                const result = await openai.images.edit({
+                    model: "gpt-image-1",
+                    image: file,
+                    prompt: editPrompt,
+                    n: 1,
+                    size: "1024x1024"
+                });
+
+                console.log('API Response:', result);
+
+                if (result.data && result.data[0] && result.data[0].b64_json) {
+                    // Convert base64 to data URL for display
+                    const imageUrl = `data:image/png;base64,${result.data[0].b64_json}`;
+                    console.log('Image generated successfully');
+                    setImageUrl(imageUrl);
+                    return imageUrl;
+                } else {
+                    console.error('Invalid response format:', result);
+                    throw new Error('Invalid response format from API');
+                }
+            } catch (fetchError) {
+                console.error('Error fetching or processing image:', fetchError);
+                throw fetchError;
             }
         } catch (error) {
             console.error('Error in imageGenerator:', error);
@@ -100,7 +133,9 @@ const ContextProvider = (props) => {
         input,
         setInput,
         newChat,
-        imageUrl
+        imageUrl,
+        selectedFolder,
+        setSelectedFolder
     }
 
     return (
