@@ -75,7 +75,7 @@
 
 .slider-controls {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
     gap: 10px;
@@ -103,19 +103,19 @@
 
 .folder-options.slider {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 20px;
     overflow: hidden;
-    height: 420px;
-    width: 180px;
-    justify-content: flex-start;
+    width: 100%;
+    height: auto;
+    justify-content: center;
     align-items: center;
 }
 
 @media (max-width: 700px) {
     .folder-options.slider {
-        height: 300px;
-        width: 120px;
+        width: 100%;
+        height: auto;
         gap: 10px;
     }
     .slider-controls button {
